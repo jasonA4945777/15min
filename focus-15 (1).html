@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15 分鐘專注記錄器</title>
+<style>
+  :root{
+    --sand:#F7F2EC;
+    --paper:#FDFBF7;
+    --ink:#2E2A26;
+    --ink-soft:#6b635a;
+    --ochre:#A8473C;
+    --sage:#6E8B7B;
+    --line:#e6ddd0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+    background:var(--sand);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    padding:24px 16px 64px;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{width:100%;max-width:520px}
+
+  header{margin-bottom:20px}
+  header .eyebrow{
+    font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--ochre);font-weight:700;
+  }
+  header h1{font-size:22px;font-weight:700;margin-top:4px}
+  header p{font-size:13px;color:var(--ink-soft);margin-top:4px}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:24px;
+    margin-bottom:16px;
+  }
+
+  /* timer */
+  .timer{display:flex;flex-direction:column;align-items:center}
+  .ring{position:relative;width:240px;height:240px}
+  .ring svg{transform:rotate(-90deg);width:100%;height:100%}
+  .ring .track{fill:none;stroke:var(--line);stroke-width:10}
+  .ring .prog{fill:none;stroke:var(--sage);stroke-width:10;stroke-linecap:round;
+    transition:stroke-dashoffset .95s linear,stroke .3s}
+  .ring.done .prog{stroke:var(--ochre)}
+  .ring .center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .time{
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum";
+    font-size:54px;font-weight:700;letter-spacing:1px;line-height:1;
+  }
+  .state{font-size:13px;color:var(--ink-soft);margin-top:8px;letter-spacing:.04em}
+  .ring.done .state{color:var(--ochre);font-weight:700}
+
+  .controls{display:flex;gap:10px;margin-top:22px;width:100%}
+  button{
+    font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;
+    border:1px solid var(--line);border-radius:12px;padding:12px 16px;
+    background:var(--paper);color:var(--ink);transition:.15s;flex:1;
+  }
+  button:hover{border-color:var(--ink-soft)}
+  button:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+  button.primary{background:var(--ochre);border-color:var(--ochre);color:#fff}
+  button.primary:hover{background:#933e34}
+  button:disabled{opacity:.4;cursor:not-allowed}
+
+  /* activity input */
+  label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}
+  textarea{
+    width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+    background:var(--sand);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;resize:vertical;min-height:70px;line-height:1.5;
+  }
+  textarea:focus{outline:2px solid var(--sage);outline-offset:1px;border-color:var(--sage)}
+  .save-row{display:flex;gap:10px;margin-top:12px;align-items:center}
+  .hint{font-size:12px;color:var(--ink-soft);flex:1}
+
+  /* log */
+  .log-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .log-head h2{font-size:16px;font-weight:700}
+  .stats{font-size:13px;color:var(--ink-soft)}
+  .stats b{color:var(--sage)}
+  .entry{
+    display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line);
+  }
+  .entry:first-of-type{border-top:none}
+  .entry .when{
+    font-variant-numeric:tabular-nums;font-size:13px;color:var(--ochre);
+    font-weight:700;white-space:nowrap;padding-top:1px;min-width:46px;
+  }
+  .entry .what{font-size:15px;line-height:1.5;flex:1;white-space:pre-wrap;word-break:break-word}
+  .entry .dur{font-size:12px;color:var(--ink-soft);white-space:nowrap;padding-top:2px}
+  .entry .del{flex:0;border:none;background:none;color:var(--ink-soft);
+    font-size:18px;padding:0 4px;width:auto;line-height:1}
+  .entry .del:hover{color:var(--ochre)}
+  .empty{font-size:14px;color:var(--ink-soft);text-align:center;padding:18px 0}
+
+  .footer-actions{display:flex;gap:10px;margin-top:16px}
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;
+    font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:10;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* 統整匯出：範圍切換 */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{flex:0 0 auto;border:none;border-radius:0;padding:6px 13px;font-size:13px;
+    font-weight:600;background:var(--paper);color:var(--ink-soft)}
+  .seg button.active{background:var(--sage);color:#fff}
+  .seg button:focus-visible{outline:2px solid var(--ochre);outline-offset:-2px}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">FOCUS · 15 MIN</div>
+    <h1>15 分鐘專注記錄器</h1>
+    <p>倒數 15 分鐘，寫下這一段你做了什麼，累積在今日紀錄裡。</p>
+  </header>
+
+  <div class="card">
+    <div class="timer">
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 240 240">
+          <circle class="track" cx="120" cy="120" r="110"></circle>
+          <circle class="prog" id="prog" cx="120" cy="120" r="110"></circle>
+        </svg>
+        <div class="center">
+          <div class="time" id="time">15:00</div>
+          <div class="state" id="state">準備開始</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="primary" id="startBtn">開始</button>
+        <button id="resetBtn" disabled>重置</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="activity">這 15 分鐘做什麼？</label>
+    <textarea id="activity" placeholder="例如：寫論文第四章結果段、整理 LINE 機器人流程…"></textarea>
+    <div class="save-row">
+      <span class="hint" id="saveHint">時間到或提早完成都能保存這一段。</span>
+      <button id="saveBtn" style="flex:0 0 auto;padding:10px 18px">保存本段</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="log-head">
+      <h2>今日紀錄</h2>
+      <span class="stats" id="stats"></span>
+    </div>
+    <div id="log"></div>
+    <div class="footer-actions">
+      <button id="copyBtn">複製今日紀錄</button>
+      <button id="clearBtn">清除今日</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="log-head">
+      <h2>統整匯出</h2>
+      <div class="seg" id="aiRange">
+        <button class="active" data-range="today">今日</button>
+        <button data-range="7d">近 7 天</button>
+        <button data-range="all">全部</button>
+      </div>
+    </div>
+    <p class="hint" style="margin-bottom:14px">把選定範圍的紀錄加上整理指令一起複製，貼到 ChatGPT / Claude 就會自動分類、算時數、寫摘要。</p>
+    <button class="primary" id="aiCopyBtn" style="width:100%">複製統整提示</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  const DURATION = 15 * 60; // 秒
+  const KEY = "focus15-records";
+
+  // ---- 儲存：localStorage，失敗則退回記憶體 ----
+  let mem = [];
+  function load(){
+    try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : []; }
+    catch(e){ return mem; }
+  }
+  function save(arr){
+    mem = arr;
+    try{ localStorage.setItem(KEY, JSON.stringify(arr)); }catch(e){}
+  }
+
+  // ---- DOM ----
+  const $ = id => document.getElementById(id);
+  const timeEl=$("time"), stateEl=$("state"), ringEl=$("ring"), progEl=$("prog");
+  const startBtn=$("startBtn"), resetBtn=$("resetBtn"), saveBtn=$("saveBtn");
+  const activityEl=$("activity"), logEl=$("log"), statsEl=$("stats");
+  const copyBtn=$("copyBtn"), clearBtn=$("clearBtn"), toastEl=$("toast");
+
+  const R=110, C=2*Math.PI*R;
+  progEl.style.strokeDasharray = C;
+  progEl.style.strokeDashoffset = 0;
+
+  // ---- 計時狀態 ----
+  let remaining = DURATION;
+  let timer = null;
+  let running = false;
+  let elapsedSec = 0;     // 本段已專注秒數
+  let sessionStart = null; // 本段開始時間
+
+  function fmt(sec){
+    const m=Math.floor(sec/60), s=sec%60;
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+  function render(){
+    timeEl.textContent = fmt(remaining);
+    const ratio = remaining/DURATION;
+    progEl.style.strokeDashoffset = C*(1-ratio);
+  }
+
+  function tick(){
+    remaining--; elapsedSec++;
+    if(remaining<=0){
+      remaining=0; render(); stop(); done();
+      return;
+    }
+    render();
+  }
+
+  function start(){
+    if(running) { pause(); return; }
+    askNotifyPermission();
+    stopTitleFlash();
+    if(!sessionStart) sessionStart = new Date();
+    running=true;
+    ringEl.classList.remove("done");
+    stateEl.textContent="專注中…";
+    startBtn.textContent="暫停";
+    resetBtn.disabled=false;
+    timer=setInterval(tick,1000);
+  }
+  function pause(){
+    running=false; clearInterval(timer);
+    stateEl.textContent="已暫停";
+    startBtn.textContent="繼續";
+  }
+  function stop(){
+    running=false; clearInterval(timer);
+    startBtn.textContent="開始";
+  }
+  function done(){
+    ringEl.classList.add("done");
+    stateEl.textContent="時間到！";
+    chime();
+    if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+    notify();
+    if(document.hidden) startTitleFlash(); // 不在此分頁時，標題閃爍提醒
+    activityEl.focus();
+  }
+  function reset(){
+    stop();
+    remaining=DURATION; elapsedSec=0; sessionStart=null;
+    ringEl.classList.remove("done");
+    stateEl.textContent="準備開始";
+    startBtn.textContent="開始";
+    resetBtn.disabled=true;
+    stopTitleFlash();
+    render();
+  }
+
+  // ---- 提示音（Web Audio，免外部檔） ----
+  function chime(){
+    try{
+      const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      const notes=[523,659,784];
+      [0,1.1].forEach(base=>{            // 響兩輪，比較不會錯過
+        notes.forEach((f,i)=>{
+          const o=ctx.createOscillator(), g=ctx.createGain();
+          o.type="sine"; o.frequency.value=f;
+          o.connect(g); g.connect(ctx.destination);
+          const s=ctx.currentTime+base+i*0.18;
+          g.gain.setValueAtTime(0,s);
+          g.gain.linearRampToValueAtTime(0.25,s+0.02);
+          g.gain.exponentialRampToValueAtTime(0.001,s+0.5);
+          o.start(s); o.stop(s+0.5);
+        });
+      });
+    }catch(e){}
+  }
+
+  // ---- 時間到的提示（系統通知 / 分頁標題閃爍） ----
+  const BASE_TITLE="15 分鐘專注記錄器";
+  function askNotifyPermission(){
+    try{
+      if("Notification" in window && Notification.permission==="default"){
+        Notification.requestPermission();
+      }
+    }catch(e){}
+  }
+  function notify(){
+    try{
+      if("Notification" in window && Notification.permission==="granted"){
+        const n=new Notification("15 分鐘到了 ⏰",{body:"記錄一下這段做了什麼。",tag:"focus15"});
+        n.onclick=()=>{ window.focus(); n.close(); };
+      }
+    }catch(e){}
+  }
+  let titleFlash=null;
+  function startTitleFlash(){
+    stopTitleFlash();
+    let on=false;
+    titleFlash=setInterval(()=>{ document.title=on?"⏰ 時間到！":"⏰ ⏰ ⏰"; on=!on; },800);
+  }
+  function stopTitleFlash(){
+    if(titleFlash){ clearInterval(titleFlash); titleFlash=null; }
+    document.title=BASE_TITLE;
+  }
+  // 回到此分頁就停止閃爍
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) stopTitleFlash(); });
+  window.addEventListener("focus",stopTitleFlash);
+
+  // ---- 紀錄 ----
+  function todayKey(d){ return new Date(d).toLocaleDateString("zh-TW"); }
+  function isToday(iso){ return todayKey(iso)===todayKey(Date.now()); }
+
+  function saveSession(){
+    const text=activityEl.value.trim();
+    if(!text){ activityEl.focus(); toast("先寫一下這段做了什麼"); return; }
+    const spent = elapsedSec>0 ? elapsedSec : DURATION;
+    const rec={
+      id:Date.now(),
+      start:(sessionStart||new Date()).toISOString(),
+      text:text,
+      seconds:spent
+    };
+    const all=load(); all.push(rec); save(all);
+    renderLog();
+    activityEl.value="";
+    reset();
+    toast("已保存這一段 ✓");
+  }
+
+  function delEntry(id){
+    save(load().filter(r=>r.id!==id));
+    renderLog();
+  }
+
+  function renderLog(){
+    const all=load().filter(r=>isToday(r.start)).sort((a,b)=>b.id-a.id);
+    if(!all.length){
+      logEl.innerHTML='<div class="empty">今天還沒有紀錄。完成第一段 15 分鐘吧。</div>';
+      statsEl.textContent="";
+      return;
+    }
+    const totalMin=Math.round(all.reduce((s,r)=>s+r.seconds,0)/60);
+    statsEl.innerHTML=`<b>${all.length}</b> 段 · <b>${totalMin}</b> 分鐘`;
+    logEl.innerHTML=all.map(r=>{
+      const t=new Date(r.start).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false});
+      const m=Math.round(r.seconds/60);
+      return `<div class="entry">
+        <div class="when">${t}</div>
+        <div class="what">${esc(r.text)}</div>
+        <div class="dur">${m} 分</div>
+        <button class="del" data-id="${r.id}" title="刪除">×</button>
+      </div>`;
+    }).join("");
+    logEl.querySelectorAll(".del").forEach(b=>{
+      b.onclick=()=>delEntry(Number(b.dataset.id));
+    });
+  }
+
+  function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+  function copyLog(){
+    const all=load().filter(r=>isToday(r.start)).sort((a,b)=>a.id-b.id);
+    if(!all.length){ toast("今天還沒有紀錄"); return; }
+    const head=`【${todayKey(Date.now())} 專注紀錄】\n`;
+    const body=all.map(r=>{
+      const t=new Date(r.start).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false});
+      return `${t}（${Math.round(r.seconds/60)}分）｜${r.text}`;
+    }).join("\n");
+    const out=head+body;
+    navigator.clipboard?.writeText(out).then(
+      ()=>toast("已複製，可貼到 ChatGPT/筆記"),
+      ()=>fallbackCopy(out)
+    ) ?? fallbackCopy(out);
+  }
+  function fallbackCopy(text){
+    const ta=document.createElement("textarea");
+    ta.value=text; document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy");toast("已複製");}catch(e){toast("複製失敗，請手動選取");}
+    document.body.removeChild(ta);
+  }
+
+  function clearToday(){
+    if(!confirm("確定清除今天所有紀錄？")) return;
+    save(load().filter(r=>!isToday(r.start)));
+    renderLog();
+    toast("已清除今天紀錄");
+  }
+
+  let toastTimer;
+  function toast(msg){
+    toastEl.textContent=msg; toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1800);
+  }
+
+  // ---- 綁定 ----
+  startBtn.onclick=start;
+  resetBtn.onclick=reset;
+  saveBtn.onclick=saveSession;
+  copyBtn.onclick=copyLog;
+  clearBtn.onclick=clearToday;
+
+  // ---- 統整匯出 ----
+  const aiCopyBtn=$("aiCopyBtn"), aiRange=$("aiRange");
+  let range="today";
+  aiRange.querySelectorAll("button").forEach(b=>{
+    b.onclick=()=>{
+      aiRange.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active"); range=b.dataset.range;
+    };
+  });
+
+  function recordsInRange(){
+    const all=load(), now=Date.now();
+    if(range==="today") return all.filter(r=>isToday(r.start));
+    if(range==="7d"){ const cut=now-7*864e5; return all.filter(r=>new Date(r.start).getTime()>=cut); }
+    return all;
+  }
+  function recordsToText(list){
+    return list.slice().sort((a,b)=>a.id-b.id).map(r=>{
+      const d=new Date(r.start);
+      const day=d.toLocaleDateString("zh-TW");
+      const t=d.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false});
+      return `${day} ${t}（${Math.round(r.seconds/60)}分）：${r.text}`;
+    }).join("\n");
+  }
+
+  const AI_PROMPT='你是專注紀錄整理助手。以下是使用者的 15 分鐘專注紀錄，每行格式為「日期 時間（分鐘）：內容」。請把它們依主題自動分類，計算每個主題的總分鐘數，並寫一段整體重點摘要。\n\n只回傳 JSON，不要任何說明文字或 markdown 標記，格式：\n{"summary":"整體重點摘要，2-3句繁體中文","categories":[{"name":"主題名稱","minutes":總分鐘數整數,"items":["該主題做的事，簡短條列"]}],"highlight":"一句最值得記住的洞察或最有產出的一段"}\n\n紀錄：\n';
+
+  function copyAIPrompt(){
+    const list=recordsInRange();
+    if(!list.length){ toast("這個範圍還沒有紀錄"); return; }
+    const out=AI_PROMPT+recordsToText(list);
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(out).then(()=>toast("已複製提示，貼到 ChatGPT / Claude 即可"),()=>fallbackCopy(out));
+    }else fallbackCopy(out);
+  }
+
+  aiCopyBtn.onclick=copyAIPrompt;
+
+  render();
+  renderLog();
+})();
+</script>
+</body>
+</html>
