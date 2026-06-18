@@ -6,13 +6,14 @@
 <title>15 分鐘專注記錄器</title>
 <style>
   :root{
-    --sand:#F7F2EC;
-    --paper:#FDFBF7;
-    --ink:#2E2A26;
+    --sand:#f7f2ec;
+    --paper:#fdfbf7;
+    --ink:#2e2a26;
     --ink-soft:#6b635a;
-    --ochre:#A8473C;
-    --sage:#6E8B7B;
+    --ochre:#a8473c;
+    --sage:#6e8b7b;
     --line:#e6ddd0;
+    --warn:#9a6b1f;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
@@ -25,16 +26,17 @@
     display:flex;
     justify-content:center;
   }
-  .wrap{width:100%;max-width:520px}
-
+  .wrap{width:100%;max-width:560px}
   header{margin-bottom:20px}
   header .eyebrow{
-    font-size:12px;letter-spacing:.22em;text-transform:uppercase;
-    color:var(--ochre);font-weight:700;
+    font-size:12px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--ochre);
+    font-weight:700;
   }
   header h1{font-size:22px;font-weight:700;margin-top:4px}
-  header p{font-size:13px;color:var(--ink-soft);margin-top:4px}
-
+  header p{font-size:13px;color:var(--ink-soft);margin-top:4px;line-height:1.5}
   .card{
     background:var(--paper);
     border:1px solid var(--line);
@@ -42,85 +44,188 @@
     padding:24px;
     margin-bottom:16px;
   }
-
-  /* timer */
   .timer{display:flex;flex-direction:column;align-items:center}
   .ring{position:relative;width:240px;height:240px}
   .ring svg{transform:rotate(-90deg);width:100%;height:100%}
   .ring .track{fill:none;stroke:var(--line);stroke-width:10}
-  .ring .prog{fill:none;stroke:var(--sage);stroke-width:10;stroke-linecap:round;
-    transition:stroke-dashoffset .95s linear,stroke .3s}
+  .ring .prog{
+    fill:none;
+    stroke:var(--sage);
+    stroke-width:10;
+    stroke-linecap:round;
+    transition:stroke-dashoffset .95s linear,stroke .3s;
+  }
   .ring.done .prog{stroke:var(--ochre)}
   .ring .center{
-    position:absolute;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
   }
   .time{
     font-variant-numeric:tabular-nums;
     font-feature-settings:"tnum";
-    font-size:54px;font-weight:700;letter-spacing:1px;line-height:1;
+    font-size:54px;
+    font-weight:700;
+    letter-spacing:1px;
+    line-height:1;
   }
   .state{font-size:13px;color:var(--ink-soft);margin-top:8px;letter-spacing:.04em}
   .ring.done .state{color:var(--ochre);font-weight:700}
-
   .controls{display:flex;gap:10px;margin-top:22px;width:100%}
   button{
-    font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;
-    border:1px solid var(--line);border-radius:12px;padding:12px 16px;
-    background:var(--paper);color:var(--ink);transition:.15s;flex:1;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 16px;
+    background:var(--paper);
+    color:var(--ink);
+    transition:.15s;
+    flex:1;
   }
   button:hover{border-color:var(--ink-soft)}
   button:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
   button.primary{background:var(--ochre);border-color:var(--ochre);color:#fff}
   button.primary:hover{background:#933e34}
-  button:disabled{opacity:.4;cursor:not-allowed}
-
-  /* activity input */
+  button:disabled{opacity:.45;cursor:not-allowed}
   label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}
-  textarea{
-    width:100%;font-family:inherit;font-size:15px;color:var(--ink);
-    background:var(--sand);border:1px solid var(--line);border-radius:12px;
-    padding:12px 14px;resize:vertical;min-height:70px;line-height:1.5;
+  input,textarea,select{
+    width:100%;
+    font-family:inherit;
+    font-size:15px;
+    color:var(--ink);
+    background:var(--sand);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
   }
-  textarea:focus{outline:2px solid var(--sage);outline-offset:1px;border-color:var(--sage)}
-  .save-row{display:flex;gap:10px;margin-top:12px;align-items:center}
-  .hint{font-size:12px;color:var(--ink-soft);flex:1}
-
-  /* log */
-  .log-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  textarea{resize:vertical;min-height:78px;line-height:1.5}
+  input:focus,textarea:focus,select:focus{
+    outline:2px solid var(--sage);
+    outline-offset:1px;
+    border-color:var(--sage);
+  }
+  .save-row,.footer-actions,.sync-actions,.sync-grid{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .save-row,.footer-actions,.sync-actions{margin-top:12px}
+  .sync-grid{
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .sync-grid .field{flex:1 1 240px}
+  .hint{font-size:12px;color:var(--ink-soft);line-height:1.55}
+  .hint.warn{color:var(--warn)}
+  .status-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    border-radius:999px;
+    padding:7px 10px;
+    background:#f3ece2;
+    color:var(--ink-soft);
+  }
+  .status-chip.ok{background:#e8f1ec;color:#3f6756}
+  .status-chip.warn{background:#f8efdf;color:#8b6417}
+  .log-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:14px;
+  }
   .log-head h2{font-size:16px;font-weight:700}
   .stats{font-size:13px;color:var(--ink-soft)}
   .stats b{color:var(--sage)}
   .entry{
-    display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line);
+    display:flex;
+    gap:14px;
+    padding:12px 0;
+    border-top:1px solid var(--line);
   }
   .entry:first-of-type{border-top:none}
   .entry .when{
-    font-variant-numeric:tabular-nums;font-size:13px;color:var(--ochre);
-    font-weight:700;white-space:nowrap;padding-top:1px;min-width:46px;
+    font-variant-numeric:tabular-nums;
+    font-size:13px;
+    color:var(--ochre);
+    font-weight:700;
+    white-space:nowrap;
+    padding-top:1px;
+    min-width:46px;
   }
-  .entry .what{font-size:15px;line-height:1.5;flex:1;white-space:pre-wrap;word-break:break-word}
+  .entry .what{
+    font-size:15px;
+    line-height:1.5;
+    flex:1;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
   .entry .dur{font-size:12px;color:var(--ink-soft);white-space:nowrap;padding-top:2px}
-  .entry .del{flex:0;border:none;background:none;color:var(--ink-soft);
-    font-size:18px;padding:0 4px;width:auto;line-height:1}
+  .entry .del{
+    flex:0;
+    border:none;
+    background:none;
+    color:var(--ink-soft);
+    font-size:18px;
+    padding:0 4px;
+    width:auto;
+    line-height:1;
+  }
   .entry .del:hover{color:var(--ochre)}
   .empty{font-size:14px;color:var(--ink-soft);text-align:center;padding:18px 0}
-
-  .footer-actions{display:flex;gap:10px;margin-top:16px}
   .toast{
-    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
-    background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;
-    font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:10;
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:10px;
+    font-size:14px;
+    opacity:0;
+    pointer-events:none;
+    transition:.25s;
+    z-index:10;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-  /* 統整匯出：範圍切換 */
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  .seg button{flex:0 0 auto;border:none;border-radius:0;padding:6px 13px;font-size:13px;
-    font-weight:600;background:var(--paper);color:var(--ink-soft)}
+  .seg{
+    display:inline-flex;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .seg button{
+    flex:0 0 auto;
+    border:none;
+    border-radius:0;
+    padding:6px 13px;
+    font-size:13px;
+    font-weight:600;
+    background:var(--paper);
+    color:var(--ink-soft);
+  }
   .seg button.active{background:var(--sage);color:#fff}
   .seg button:focus-visible{outline:2px solid var(--ochre);outline-offset:-2px}
-
+  .mini-list{
+    margin-top:10px;
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.55;
+  }
+  .mini-list code{font-size:12px}
+  @media (max-width:520px){
+    .controls,.save-row,.footer-actions,.sync-actions{flex-direction:column}
+    .controls button,.save-row button,.footer-actions button,.sync-actions button{width:100%}
+  }
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important}
   }
@@ -131,13 +236,13 @@
   <header>
     <div class="eyebrow">FOCUS · 15 MIN</div>
     <h1>15 分鐘專注記錄器</h1>
-    <p>倒數 15 分鐘，寫下這一段你做了什麼，累積在今日紀錄裡。</p>
+    <p>倒數 15 分鐘，寫下這段時間做了什麼。現在支援更穩定的到期判斷，也可選擇同步到雲端跨裝置存取。</p>
   </header>
 
   <div class="card">
     <div class="timer">
       <div class="ring" id="ring">
-        <svg viewBox="0 0 240 240">
+        <svg viewBox="0 0 240 240" aria-hidden="true">
           <circle class="track" cx="120" cy="120" r="110"></circle>
           <circle class="prog" id="prog" cx="120" cy="120" r="110"></circle>
         </svg>
@@ -148,18 +253,55 @@
       </div>
       <div class="controls">
         <button class="primary" id="startBtn">開始</button>
-        <button id="resetBtn" disabled>重置</button>
+        <button id="resetBtn" disabled>重設</button>
       </div>
     </div>
   </div>
 
   <div class="card">
     <label for="activity">這 15 分鐘做什麼？</label>
-    <textarea id="activity" placeholder="例如：寫論文第四章結果段、整理 LINE 機器人流程…"></textarea>
+    <textarea id="activity" placeholder="例如：整理班表、回覆 LINE、確認交班事項、處理請假資料"></textarea>
     <div class="save-row">
-      <span class="hint" id="saveHint">時間到或提早完成都能保存這一段。</span>
+      <span class="hint" id="saveHint">按開始後可要求通知權限；若瀏覽器或系統擋住通知，時間到時至少還會播放聲音與切換頁籤標題。</span>
       <button id="testNotifyBtn" style="flex:0 0 auto;padding:10px 14px">測試通知</button>
-      <button id="saveBtn" style="flex:0 0 auto;padding:10px 18px">保存本段</button>
+      <button id="saveBtn" style="flex:0 0 auto;padding:10px 18px">儲存紀錄</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="log-head">
+      <h2>雲端同步</h2>
+      <span class="status-chip" id="syncState">本機模式</span>
+    </div>
+    <div class="sync-grid">
+      <div class="field">
+        <label for="syncMode">儲存方式</label>
+        <select id="syncMode">
+          <option value="local">只存在這台裝置</option>
+          <option value="supabase">Supabase 雲端同步</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="syncId">同步 ID</label>
+        <input id="syncId" type="text" placeholder="同一組 ID 可在不同裝置讀到相同資料">
+      </div>
+      <div class="field">
+        <label for="supabaseUrl">Supabase Project URL</label>
+        <input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co">
+      </div>
+      <div class="field">
+        <label for="supabaseKey">Supabase Anon Key</label>
+        <input id="supabaseKey" type="password" placeholder="eyJhbGciOi...">
+      </div>
+    </div>
+    <div class="sync-actions">
+      <button id="saveSyncBtn">儲存同步設定</button>
+      <button id="syncNowBtn">立即同步</button>
+    </div>
+    <p class="hint" id="syncHint" style="margin-top:12px">若要跨裝置，請在每台裝置輸入同一組同步 ID 與同一個 Supabase 專案設定。未設定完成前，仍會先用本機資料運作。</p>
+    <div class="mini-list">
+      建議的 Supabase 資料表欄位：
+      <br><code>focus15_records(id bigint primary key, user_id text, start timestamptz, text text, seconds int)</code>
     </div>
   </div>
 
@@ -171,21 +313,21 @@
     <div id="log"></div>
     <div class="footer-actions">
       <button id="copyBtn">複製今日紀錄</button>
-      <button id="clearBtn">清除今日</button>
+      <button id="clearBtn">清除今日紀錄</button>
     </div>
   </div>
 
   <div class="card">
     <div class="log-head">
-      <h2>統整匯出</h2>
+      <h2>AI 整理提示</h2>
       <div class="seg" id="aiRange">
-        <button class="active" data-range="today">今日</button>
+        <button class="active" data-range="today">今天</button>
         <button data-range="7d">近 7 天</button>
         <button data-range="all">全部</button>
       </div>
     </div>
-    <p class="hint" style="margin-bottom:14px">把選定範圍的紀錄加上整理指令一起複製，貼到 ChatGPT / Claude 就會自動分類、算時數、寫摘要。</p>
-    <button class="primary" id="aiCopyBtn" style="width:100%">複製統整提示</button>
+    <p class="hint" style="margin-bottom:14px">把整理好的提示詞複製到 ChatGPT 或 Claude，可快速把你的專注紀錄分類、統計與摘要。</p>
+    <button class="primary" id="aiCopyBtn" style="width:100%">複製 AI 提示詞</button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -193,331 +335,833 @@
 <script>
 (function(){
   "use strict";
-  const DURATION = 15 * 60; // 秒
-  const KEY = "focus15-records";
 
-  // ---- 儲存：localStorage，失敗則退回記憶體 ----
-  let mem = [];
-  function load(){
-    try{ const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : []; }
-    catch(e){ return mem; }
-  }
-  function save(arr){
-    mem = arr;
-    try{ localStorage.setItem(KEY, JSON.stringify(arr)); }catch(e){}
-  }
+  const DURATION = 15 * 60;
+  const KEYS = {
+    records: "focus15-records",
+    timer: "focus15-timer",
+    sync: "focus15-sync-config"
+  };
+  const BASE_TITLE = "15 分鐘專注記錄器";
+  const AI_PROMPT = '你是專注紀錄整理助手。以下是使用者的 15 分鐘專注紀錄，每行格式為「日期 時間（分鐘）：內容」。請把它們依主題自動分類，計算每個主題的總分鐘數，並寫一段整體重點摘要。\\n\\n只回傳 JSON，不要任何說明文字或 markdown 標記，格式：\\n{"summary":"整體重點摘要，2-3 句繁體中文","categories":[{"name":"主題名稱","minutes":總分鐘數整數,"items":["該主題做的事，簡短條列"]}],"highlight":"一句最值得記住的洞察或最有產出的一段"}\\n\\n紀錄：\\n';
 
-  // ---- DOM ----
   const $ = id => document.getElementById(id);
-  const timeEl=$("time"), stateEl=$("state"), ringEl=$("ring"), progEl=$("prog");
-  const startBtn=$("startBtn"), resetBtn=$("resetBtn"), saveBtn=$("saveBtn"), testNotifyBtn=$("testNotifyBtn");
-  const activityEl=$("activity"), logEl=$("log"), statsEl=$("stats");
-  const copyBtn=$("copyBtn"), clearBtn=$("clearBtn"), toastEl=$("toast"), saveHintEl=$("saveHint");
+  const timeEl = $("time");
+  const stateEl = $("state");
+  const ringEl = $("ring");
+  const progEl = $("prog");
+  const startBtn = $("startBtn");
+  const resetBtn = $("resetBtn");
+  const saveBtn = $("saveBtn");
+  const testNotifyBtn = $("testNotifyBtn");
+  const activityEl = $("activity");
+  const logEl = $("log");
+  const statsEl = $("stats");
+  const copyBtn = $("copyBtn");
+  const clearBtn = $("clearBtn");
+  const toastEl = $("toast");
+  const saveHintEl = $("saveHint");
+  const aiCopyBtn = $("aiCopyBtn");
+  const aiRange = $("aiRange");
+  const syncModeEl = $("syncMode");
+  const syncIdEl = $("syncId");
+  const supabaseUrlEl = $("supabaseUrl");
+  const supabaseKeyEl = $("supabaseKey");
+  const saveSyncBtn = $("saveSyncBtn");
+  const syncNowBtn = $("syncNowBtn");
+  const syncHintEl = $("syncHint");
+  const syncStateEl = $("syncState");
 
-  const R=110, C=2*Math.PI*R;
+  const R = 110;
+  const C = 2 * Math.PI * R;
   progEl.style.strokeDasharray = C;
-  progEl.style.strokeDashoffset = 0;
 
-  // ---- 計時狀態（以實際時間戳計算，背景分頁也不會失準） ----
-  let remaining = DURATION;   // 顯示用剩餘秒數
-  let endAt = null;           // 執行中：應歸零的時間戳（ms）
-  let timer = null;
-  let bgTimer = null;
+  let mem = [];
+  let recordsCache = [];
+  let syncConfig = loadSyncConfig();
+  let remaining = DURATION;
   let running = false;
   let finished = false;
-  let sessionStart = null;    // 本段開始時間
+  let endAt = null;
+  let sessionStart = null;
+  let titleFlash = null;
+  let toastTimer = null;
+  let aiRangeValue = "today";
+  let timerInterval = null;
+  let timerWorker = createTimerWorker();
 
-  // 用真實時間重新計算剩餘，回到分頁或被節流後都能校正
+  function defaultSyncConfig(){
+    return {
+      mode: "local",
+      syncId: createSyncId(),
+      supabaseUrl: "",
+      supabaseAnonKey: ""
+    };
+  }
+
+  function createSyncId(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "focus15-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function loadSyncConfig(){
+    try{
+      const raw = localStorage.getItem(KEYS.sync);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return {
+        ...defaultSyncConfig(),
+        ...parsed
+      };
+    }catch(_err){
+      return defaultSyncConfig();
+    }
+  }
+
+  function persistSyncConfig(){
+    try{
+      localStorage.setItem(KEYS.sync, JSON.stringify(syncConfig));
+    }catch(_err){}
+  }
+
+  function hydrateSyncForm(){
+    syncModeEl.value = syncConfig.mode;
+    syncIdEl.value = syncConfig.syncId || "";
+    supabaseUrlEl.value = syncConfig.supabaseUrl || "";
+    supabaseKeyEl.value = syncConfig.supabaseAnonKey || "";
+    updateSyncUi();
+  }
+
+  function updateSyncUi(){
+    const remoteReady = isRemoteConfigured();
+    if(syncConfig.mode === "supabase" && remoteReady){
+      syncStateEl.textContent = "雲端同步已設定";
+      syncStateEl.className = "status-chip ok";
+      syncHintEl.textContent = "這份紀錄會先寫到 Supabase；同樣輸入同步 ID 的其他裝置可讀到相同資料。";
+    }else if(syncConfig.mode === "supabase"){
+      syncStateEl.textContent = "雲端模式待完成";
+      syncStateEl.className = "status-chip warn";
+      syncHintEl.textContent = "你已選擇雲端同步，但還缺少 Supabase URL、Anon Key 或同步 ID，所以目前仍會退回本機資料。";
+    }else{
+      syncStateEl.textContent = "本機模式";
+      syncStateEl.className = "status-chip";
+      syncHintEl.textContent = "目前資料只保存在這個瀏覽器。若要跨裝置，切到 Supabase 雲端同步並填入同一組同步設定。";
+    }
+  }
+
+  function saveLocalMirror(records){
+    mem = records.slice();
+    try{
+      localStorage.setItem(KEYS.records, JSON.stringify(records));
+    }catch(_err){}
+  }
+
+  function loadLocalMirror(){
+    try{
+      const raw = localStorage.getItem(KEYS.records);
+      return raw ? JSON.parse(raw) : mem.slice();
+    }catch(_err){
+      return mem.slice();
+    }
+  }
+
+  function normalizeRecord(record){
+    return {
+      id: Number(record.id),
+      start: String(record.start),
+      text: String(record.text || ""),
+      seconds: Number(record.seconds || 0)
+    };
+  }
+
+  function isRemoteConfigured(){
+    return syncConfig.mode === "supabase"
+      && /^https:\/\/.+/i.test(syncConfig.supabaseUrl || "")
+      && Boolean((syncConfig.supabaseAnonKey || "").trim())
+      && Boolean((syncConfig.syncId || "").trim());
+  }
+
+  function remoteHeaders(extra){
+    return {
+      apikey: syncConfig.supabaseAnonKey,
+      Authorization: "Bearer " + syncConfig.supabaseAnonKey,
+      "Content-Type": "application/json",
+      ...extra
+    };
+  }
+
+  async function remoteFetch(path, options){
+    const url = syncConfig.supabaseUrl.replace(/\/+$/, "") + path;
+    const response = await fetch(url, options);
+    if(!response.ok){
+      const text = await response.text().catch(() => "");
+      throw new Error("Supabase " + response.status + (text ? ": " + text : ""));
+    }
+    if(response.status === 204) return null;
+    return response.json();
+  }
+
+  async function fetchRemoteRecords(){
+    const params = new URLSearchParams({
+      select: "id,start,text,seconds",
+      user_id: "eq." + syncConfig.syncId,
+      order: "start.desc"
+    });
+    const rows = await remoteFetch("/rest/v1/focus15_records?" + params.toString(), {
+      method: "GET",
+      headers: remoteHeaders()
+    });
+    return Array.isArray(rows) ? rows.map(normalizeRecord) : [];
+  }
+
+  async function upsertRemoteRecord(record){
+    const payload = [{
+      ...record,
+      user_id: syncConfig.syncId
+    }];
+    await remoteFetch("/rest/v1/focus15_records", {
+      method: "POST",
+      headers: remoteHeaders({
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      }),
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async function deleteRemoteRecord(id){
+    const params = new URLSearchParams({
+      user_id: "eq." + syncConfig.syncId,
+      id: "eq." + id
+    });
+    await remoteFetch("/rest/v1/focus15_records?" + params.toString(), {
+      method: "DELETE",
+      headers: remoteHeaders({
+        Prefer: "return=minimal"
+      })
+    });
+  }
+
+  async function clearRemoteToday(){
+    const start = startOfToday();
+    const end = new Date(start.getTime() + 86400000);
+    const params = new URLSearchParams();
+    params.set("user_id", "eq." + syncConfig.syncId);
+    params.set("and", "(start.gte." + start.toISOString() + ",start.lt." + end.toISOString() + ")");
+    await remoteFetch("/rest/v1/focus15_records?" + params.toString(), {
+      method: "DELETE",
+      headers: remoteHeaders({
+        Prefer: "return=minimal"
+      })
+    });
+  }
+
+  async function loadRecords(){
+    if(isRemoteConfigured()){
+      try{
+        const rows = await fetchRemoteRecords();
+        saveLocalMirror(rows);
+        recordsCache = rows;
+        updateSyncUi();
+        return rows;
+      }catch(err){
+        console.error(err);
+        syncStateEl.textContent = "雲端讀取失敗，已退回本機";
+        syncStateEl.className = "status-chip warn";
+        recordsCache = loadLocalMirror();
+        return recordsCache;
+      }
+    }
+    recordsCache = loadLocalMirror();
+    return recordsCache;
+  }
+
+  async function addRecord(record){
+    const normalized = normalizeRecord(record);
+    const next = [normalized].concat(recordsCache.filter(item => item.id !== normalized.id));
+    recordsCache = next;
+    saveLocalMirror(next);
+    if(isRemoteConfigured()){
+      await upsertRemoteRecord(normalized);
+      recordsCache = await fetchRemoteRecords();
+      saveLocalMirror(recordsCache);
+    }
+  }
+
+  async function removeRecord(id){
+    recordsCache = recordsCache.filter(record => record.id !== id);
+    saveLocalMirror(recordsCache);
+    if(isRemoteConfigured()){
+      await deleteRemoteRecord(id);
+      recordsCache = await fetchRemoteRecords();
+      saveLocalMirror(recordsCache);
+    }
+  }
+
+  async function clearTodayRecords(){
+    const todayRecords = recordsCache.filter(record => !isToday(record.start));
+    recordsCache = todayRecords;
+    saveLocalMirror(recordsCache);
+    if(isRemoteConfigured()){
+      await clearRemoteToday();
+      recordsCache = await fetchRemoteRecords();
+      saveLocalMirror(recordsCache);
+    }
+  }
+
+  function saveTimerState(){
+    const state = {
+      running,
+      remaining,
+      endAt,
+      sessionStart
+    };
+    try{
+      localStorage.setItem(KEYS.timer, JSON.stringify(state));
+    }catch(_err){}
+  }
+
+  function clearTimerState(){
+    try{
+      localStorage.removeItem(KEYS.timer);
+    }catch(_err){}
+  }
+
+  function restoreTimerState(){
+    try{
+      const raw = localStorage.getItem(KEYS.timer);
+      if(!raw) return;
+      const saved = JSON.parse(raw);
+      remaining = Number(saved.remaining ?? DURATION);
+      sessionStart = saved.sessionStart || null;
+      endAt = saved.endAt || null;
+      running = Boolean(saved.running);
+      if(running && endAt){
+        syncRemaining();
+        if(remaining <= 0){
+          finish({fromRestore:true});
+          return;
+        }
+        startActiveTimers();
+        stateEl.textContent = "進行中";
+        startBtn.textContent = "暫停";
+        resetBtn.disabled = false;
+      }else{
+        running = false;
+        endAt = null;
+        startBtn.textContent = remaining < DURATION ? "繼續" : "開始";
+        resetBtn.disabled = remaining === DURATION;
+        stateEl.textContent = remaining < DURATION ? "已暫停" : "準備開始";
+      }
+    }catch(_err){
+      clearTimerState();
+    }
+  }
+
+  function createTimerWorker(){
+    if(!window.Worker || !window.Blob || !window.URL || !window.URL.createObjectURL) return null;
+    const source = `
+      let pulse = null;
+      let alarm = null;
+      function clearAll(){
+        if(pulse){ clearInterval(pulse); pulse = null; }
+        if(alarm){ clearTimeout(alarm); alarm = null; }
+      }
+      self.onmessage = event => {
+        const data = event.data || {};
+        if(data.type === "start"){
+          clearAll();
+          const delay = Math.max(0, Number(data.delay) || 0);
+          pulse = setInterval(() => self.postMessage({ type: "tick" }), 250);
+          alarm = setTimeout(() => self.postMessage({ type: "alarm" }), delay + 20);
+        }
+        if(data.type === "stop"){
+          clearAll();
+        }
+      };
+    `;
+    const blob = new Blob([source], {type:"application/javascript"});
+    const worker = new Worker(URL.createObjectURL(blob));
+    worker.onmessage = event => {
+      const data = event.data || {};
+      if(data.type === "tick"){
+        tick();
+      }else if(data.type === "alarm"){
+        syncRemaining();
+        if(remaining <= 0){
+          finish();
+        }
+      }
+    };
+    return worker;
+  }
+
+  function startActiveTimers(){
+    stopActiveTimers();
+    timerInterval = window.setInterval(tick, 1000);
+    if(timerWorker && running && endAt){
+      timerWorker.postMessage({
+        type: "start",
+        delay: Math.max(0, endAt - Date.now())
+      });
+    }
+  }
+
+  function stopActiveTimers(){
+    if(timerInterval){
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    if(timerWorker){
+      timerWorker.postMessage({type:"stop"});
+    }
+  }
+
   function syncRemaining(){
-    if(running && endAt!=null){
-      remaining = Math.max(0, Math.round((endAt - Date.now())/1000));
+    if(running && endAt != null){
+      remaining = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+      saveTimerState();
     }
   }
 
   function fmt(sec){
-    const m=Math.floor(sec/60), s=sec%60;
-    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    const min = Math.floor(sec / 60);
+    const rem = sec % 60;
+    return String(min).padStart(2, "0") + ":" + String(rem).padStart(2, "0");
   }
+
   function render(){
     timeEl.textContent = fmt(remaining);
-    const ratio = remaining/DURATION;
-    progEl.style.strokeDashoffset = C*(1-ratio);
+    const ratio = Math.min(1, Math.max(0, remaining / DURATION));
+    progEl.style.strokeDashoffset = C * (1 - ratio);
   }
 
   function tick(){
     syncRemaining();
     render();
-    if(running && remaining<=0) finish();
+    if(running && remaining <= 0){
+      finish();
+    }
   }
 
-  function start(){
-    if(running) { pause(); return; }
-    askNotifyPermission();
+  async function start(){
+    if(running){
+      pause();
+      return;
+    }
+    await askNotifyPermission();
     stopTitleFlash();
-    if(!sessionStart) sessionStart = new Date();
-    finished=false;
-    endAt = Date.now() + remaining*1000;
-    running=true;
+    if(!sessionStart) sessionStart = new Date().toISOString();
+    finished = false;
+    endAt = Date.now() + remaining * 1000;
+    running = true;
     ringEl.classList.remove("done");
-    stateEl.textContent="專注中…";
-    startBtn.textContent="暫停";
-    resetBtn.disabled=false;
-    timer=setInterval(tick,250);
-    clearTimeout(bgTimer);                          // 背景時盡量準時觸發
-    bgTimer=setTimeout(tick, remaining*1000+300);
-  }
-  function pause(){
-    syncRemaining();                                // 凍結目前剩餘
-    running=false; clearInterval(timer); clearTimeout(bgTimer); endAt=null;
-    stateEl.textContent="已暫停";
-    startBtn.textContent="繼續";
-  }
-  function stop(){
-    running=false; clearInterval(timer); clearTimeout(bgTimer); endAt=null;
-    startBtn.textContent="開始";
-  }
-  function finish(){
-    if(finished) return;
-    finished=true;
-    remaining=0; render();
-    stop();
-    done();
-  }
-  function done(){
-    ringEl.classList.add("done");
-    stateEl.textContent="時間到！";
-    chime();
-    if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
-    notify();
-    if(document.hidden) startTitleFlash(); // 不在此分頁時，標題閃爍提醒
-    activityEl.focus();
-  }
-  function reset(){
-    stop();
-    remaining=DURATION; sessionStart=null; finished=false;
-    ringEl.classList.remove("done");
-    stateEl.textContent="準備開始";
-    startBtn.textContent="開始";
-    resetBtn.disabled=true;
-    stopTitleFlash();
+    stateEl.textContent = "進行中";
+    startBtn.textContent = "暫停";
+    resetBtn.disabled = false;
+    saveTimerState();
+    startActiveTimers();
     render();
   }
 
-  // ---- 提示音（Web Audio，免外部檔） ----
-  function chime(){
-    try{
-      const ctx=new (window.AudioContext||window.webkitAudioContext)();
-      const notes=[523,659,784];
-      [0,1.1].forEach(base=>{            // 響兩輪，比較不會錯過
-        notes.forEach((f,i)=>{
-          const o=ctx.createOscillator(), g=ctx.createGain();
-          o.type="sine"; o.frequency.value=f;
-          o.connect(g); g.connect(ctx.destination);
-          const s=ctx.currentTime+base+i*0.18;
-          g.gain.setValueAtTime(0,s);
-          g.gain.linearRampToValueAtTime(0.25,s+0.02);
-          g.gain.exponentialRampToValueAtTime(0.001,s+0.5);
-          o.start(s); o.stop(s+0.5);
-        });
-      });
-    }catch(e){}
+  function pause(){
+    syncRemaining();
+    running = false;
+    endAt = null;
+    stopActiveTimers();
+    stateEl.textContent = "已暫停";
+    startBtn.textContent = "繼續";
+    saveTimerState();
   }
 
-  // ---- 時間到的提示（系統通知 / 分頁標題閃爍） ----
-  const BASE_TITLE="15 分鐘專注記錄器";
-  function notifyStatusText(){
-    if(!("Notification" in window)) return "這個瀏覽器不支援系統通知；時間到會用聲音和頁籤標題提醒。";
-    if(!window.isSecureContext && location.protocol!=="file:") return "系統通知需要 https 或 localhost；目前頁面可能無法跳 Mac 通知。";
-    if(Notification.permission==="granted") return "通知已允許；15 分鐘到會跳 Mac 系統通知。";
-    if(Notification.permission==="denied") return "通知已被瀏覽器或 macOS 阻擋，請到瀏覽器/系統設定開啟通知。";
-    return "按「開始」或「測試通知」後允許通知，15 分鐘到才會跳 Mac 系統通知。";
+  function stop(){
+    running = false;
+    endAt = null;
+    stopActiveTimers();
+    saveTimerState();
   }
+
+  function finish(options){
+    if(finished) return;
+    finished = true;
+    remaining = 0;
+    render();
+    stop();
+    done(options || {});
+  }
+
+  function done(options){
+    ringEl.classList.add("done");
+    stateEl.textContent = "時間到了";
+    chime();
+    if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+    notify({
+      title: "15 分鐘到了 ⏰",
+      body: options.fromRestore ? "這段計時已在背景到期，現在可以補記錄。" : "記錄一下這段時間做了什麼。"
+    });
+    if(document.hidden) startTitleFlash();
+    clearTimerState();
+    activityEl.focus();
+  }
+
+  function reset(){
+    stop();
+    remaining = DURATION;
+    sessionStart = null;
+    finished = false;
+    ringEl.classList.remove("done");
+    stateEl.textContent = "準備開始";
+    startBtn.textContent = "開始";
+    resetBtn.disabled = true;
+    stopTitleFlash();
+    clearTimerState();
+    render();
+  }
+
+  function chime(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523, 659, 784];
+      [0, 1.1].forEach(base => {
+        notes.forEach((frequency, index) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = frequency;
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          const startAt = ctx.currentTime + base + index * 0.18;
+          gain.gain.setValueAtTime(0, startAt);
+          gain.gain.linearRampToValueAtTime(0.25, startAt + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, startAt + 0.5);
+          osc.start(startAt);
+          osc.stop(startAt + 0.5);
+        });
+      });
+    }catch(_err){}
+  }
+
+  function notifyStatusText(){
+    if(!("Notification" in window)) return "這個瀏覽器不支援系統通知，時間到時只會用聲音和頁籤標題提醒。";
+    if(!window.isSecureContext && location.protocol !== "file:") return "系統通知通常需要 https 或 localhost；若直接開本機檔案，部分瀏覽器可能不會發出通知。";
+    if(Notification.permission === "granted") return "通知已允許，15 分鐘到時會嘗試跳系統通知。";
+    if(Notification.permission === "denied") return "通知已被瀏覽器或系統阻擋，請到設定內重新開啟。";
+    return "按開始或測試通知後允許權限，15 分鐘到時才會跳系統通知。";
+  }
+
   function updateNotifyHint(){
     saveHintEl.textContent = notifyStatusText();
   }
+
   async function askNotifyPermission(){
     try{
-      if("Notification" in window && Notification.permission==="default"){
+      if("Notification" in window && Notification.permission === "default"){
         await Notification.requestPermission();
       }
-      updateNotifyHint();
-    }catch(e){}
+    }catch(_err){}
+    updateNotifyHint();
   }
+
   async function notify(options){
-    options = options || {};
+    const payload = options || {};
     try{
-      if("Notification" in window && Notification.permission==="default" && options.askFirst){
+      if("Notification" in window && Notification.permission === "default"){
         await askNotifyPermission();
       }
-      if("Notification" in window && Notification.permission==="granted"){
-        const n=new Notification(options.title || "15 分鐘到了 ⏰",{body:options.body || "記錄一下這段做了什麼。",tag:"focus15"});
-        n.onclick=()=>{ window.focus(); n.close(); };
+      if("Notification" in window && Notification.permission === "granted"){
+        const n = new Notification(payload.title || "15 分鐘到了 ⏰", {
+          body: payload.body || "記錄一下這段時間做了什麼。",
+          tag: "focus15"
+        });
+        n.onclick = () => {
+          window.focus();
+          n.close();
+        };
         return true;
       }
-    }catch(e){}
+    }catch(_err){}
     updateNotifyHint();
     return false;
   }
+
   async function testNotify(){
-    const ok = await notify({askFirst:true,title:"Focus 通知測試",body:"如果你看到這則通知，15 分鐘到也會正常提醒。"});
-    toast(ok ? "已送出測試通知" : "通知還沒開啟，請看下方提示");
+    const ok = await notify({
+      title: "Focus 通知測試",
+      body: "如果你看得到這則通知，15 分鐘到時也能正常提醒。"
+    });
+    toast(ok ? "已送出測試通知" : "通知沒有成功送出，請檢查瀏覽器與系統權限");
   }
-  let titleFlash=null;
+
   function startTitleFlash(){
     stopTitleFlash();
-    let on=false;
-    titleFlash=setInterval(()=>{ document.title=on?"⏰ 時間到！":"⏰ ⏰ ⏰"; on=!on; },800);
+    let on = false;
+    titleFlash = setInterval(() => {
+      document.title = on ? "⏰ 時間到！" : "⏰ ⏰ ⏰";
+      on = !on;
+    }, 800);
   }
+
   function stopTitleFlash(){
-    if(titleFlash){ clearInterval(titleFlash); titleFlash=null; }
-    document.title=BASE_TITLE;
+    if(titleFlash){
+      clearInterval(titleFlash);
+      titleFlash = null;
+    }
+    document.title = BASE_TITLE;
   }
-  // 回到此分頁：校正剩餘時間、必要時觸發結束、並停止標題閃爍
-  document.addEventListener("visibilitychange",()=>{
-    if(document.hidden) return;
-    if(running){ syncRemaining(); render(); if(remaining<=0) finish(); }
-    stopTitleFlash();
-  });
-  window.addEventListener("focus",stopTitleFlash);
 
-  // ---- 紀錄 ----
-  function todayKey(d){ return new Date(d).toLocaleDateString("zh-TW"); }
-  function isToday(iso){ return todayKey(iso)===todayKey(Date.now()); }
+  function startOfToday(){
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
 
-  function saveSession(){
-    const text=activityEl.value.trim();
-    if(!text){ activityEl.focus(); toast("先寫一下這段做了什麼"); return; }
+  function todayKey(input){
+    return new Date(input).toLocaleDateString("zh-TW");
+  }
+
+  function isToday(iso){
+    return todayKey(iso) === todayKey(Date.now());
+  }
+
+  function esc(text){
+    return String(text).replace(/[&<>]/g, char => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;"
+    })[char]);
+  }
+
+  async function saveSession(){
+    const text = activityEl.value.trim();
+    if(!text){
+      activityEl.focus();
+      toast("先寫下這 15 分鐘做了什麼");
+      return;
+    }
     syncRemaining();
     let spent = DURATION - remaining;
     if(spent < 1) spent = DURATION;
-    const rec={
-      id:Date.now(),
-      start:(sessionStart||new Date()).toISOString(),
-      text:text,
-      seconds:spent
+    const record = {
+      id: Date.now(),
+      start: sessionStart || new Date().toISOString(),
+      text,
+      seconds: spent
     };
-    const all=load(); all.push(rec); save(all);
-    renderLog();
-    activityEl.value="";
-    reset();
-    toast("已保存這一段 ✓");
+    try{
+      await addRecord(record);
+      renderLog();
+      activityEl.value = "";
+      reset();
+      toast("已儲存這段專注紀錄");
+    }catch(err){
+      console.error(err);
+      toast("儲存失敗，請檢查同步設定");
+    }
   }
 
-  function delEntry(id){
-    save(load().filter(r=>r.id!==id));
-    renderLog();
+  async function delEntry(id){
+    try{
+      await removeRecord(id);
+      renderLog();
+      toast("已刪除一筆紀錄");
+    }catch(err){
+      console.error(err);
+      toast("刪除失敗，請稍後再試");
+    }
   }
 
   function renderLog(){
-    const all=load().filter(r=>isToday(r.start)).sort((a,b)=>b.id-a.id);
-    if(!all.length){
-      logEl.innerHTML='<div class="empty">今天還沒有紀錄。完成第一段 15 分鐘吧。</div>';
-      statsEl.textContent="";
+    const today = recordsCache
+      .filter(record => isToday(record.start))
+      .sort((a, b) => b.id - a.id);
+
+    if(!today.length){
+      logEl.innerHTML = '<div class="empty">今天還沒有紀錄。完成第一段 15 分鐘吧。</div>';
+      statsEl.textContent = "";
       return;
     }
-    const totalMin=Math.round(all.reduce((s,r)=>s+r.seconds,0)/60);
-    statsEl.innerHTML=`<b>${all.length}</b> 段 · <b>${totalMin}</b> 分鐘`;
-    logEl.innerHTML=all.map(r=>{
-      const t=new Date(r.start).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false});
-      const m=Math.round(r.seconds/60);
+
+    const totalMin = Math.round(today.reduce((sum, record) => sum + record.seconds, 0) / 60);
+    statsEl.innerHTML = `<b>${today.length}</b> 段，共 <b>${totalMin}</b> 分鐘`;
+    logEl.innerHTML = today.map(record => {
+      const time = new Date(record.start).toLocaleTimeString("zh-TW", {
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false
+      });
+      const minutes = Math.round(record.seconds / 60);
       return `<div class="entry">
-        <div class="when">${t}</div>
-        <div class="what">${esc(r.text)}</div>
-        <div class="dur">${m} 分</div>
-        <button class="del" data-id="${r.id}" title="刪除">×</button>
+        <div class="when">${time}</div>
+        <div class="what">${esc(record.text)}</div>
+        <div class="dur">${minutes} 分</div>
+        <button class="del" data-id="${record.id}" title="刪除">×</button>
       </div>`;
     }).join("");
-    logEl.querySelectorAll(".del").forEach(b=>{
-      b.onclick=()=>delEntry(Number(b.dataset.id));
+
+    logEl.querySelectorAll(".del").forEach(button => {
+      button.onclick = () => delEntry(Number(button.dataset.id));
     });
   }
 
-  function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
-
-  function copyLog(){
-    const all=load().filter(r=>isToday(r.start)).sort((a,b)=>a.id-b.id);
-    if(!all.length){ toast("今天還沒有紀錄"); return; }
-    const head=`【${todayKey(Date.now())} 專注紀錄】\n`;
-    const body=all.map(r=>{
-      const t=new Date(r.start).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false});
-      return `${t}（${Math.round(r.seconds/60)}分）｜${r.text}`;
-    }).join("\n");
-    const out=head+body;
-    navigator.clipboard?.writeText(out).then(
-      ()=>toast("已複製，可貼到 ChatGPT/筆記"),
-      ()=>fallbackCopy(out)
-    ) ?? fallbackCopy(out);
+  function copyText(text, successMessage){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).then(
+        () => toast(successMessage),
+        () => fallbackCopy(text, successMessage)
+      );
+    }
+    fallbackCopy(text, successMessage);
+    return Promise.resolve();
   }
-  function fallbackCopy(text){
-    const ta=document.createElement("textarea");
-    ta.value=text; document.body.appendChild(ta); ta.select();
-    try{document.execCommand("copy");toast("已複製");}catch(e){toast("複製失敗，請手動選取");}
+
+  function fallbackCopy(text, successMessage){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try{
+      document.execCommand("copy");
+      toast(successMessage);
+    }catch(_err){
+      toast("複製失敗，請手動複製");
+    }
     document.body.removeChild(ta);
   }
 
-  function clearToday(){
-    if(!confirm("確定清除今天所有紀錄？")) return;
-    save(load().filter(r=>!isToday(r.start)));
-    renderLog();
-    toast("已清除今天紀錄");
+  function copyLog(){
+    const all = recordsCache
+      .filter(record => isToday(record.start))
+      .sort((a, b) => a.id - b.id);
+
+    if(!all.length){
+      toast("今天還沒有可複製的紀錄");
+      return;
+    }
+
+    const head = `${todayKey(Date.now())} 專注紀錄\n`;
+    const body = all.map(record => {
+      const time = new Date(record.start).toLocaleTimeString("zh-TW", {
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false
+      });
+      return `${time}（${Math.round(record.seconds / 60)} 分）：${record.text}`;
+    }).join("\n");
+    copyText(head + body, "已複製今日紀錄");
   }
 
-  let toastTimer;
-  function toast(msg){
-    toastEl.textContent=msg; toastEl.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1800);
+  async function clearToday(){
+    if(!confirm("確定要清除今天所有紀錄嗎？")) return;
+    try{
+      await clearTodayRecords();
+      renderLog();
+      toast("今天的紀錄已清除");
+    }catch(err){
+      console.error(err);
+      toast("清除失敗，請稍後再試");
+    }
   }
-
-  // ---- 綁定 ----
-  startBtn.onclick=start;
-  resetBtn.onclick=reset;
-  saveBtn.onclick=saveSession;
-  testNotifyBtn.onclick=testNotify;
-  copyBtn.onclick=copyLog;
-  clearBtn.onclick=clearToday;
-
-  // ---- 統整匯出 ----
-  const aiCopyBtn=$("aiCopyBtn"), aiRange=$("aiRange");
-  let range="today";
-  aiRange.querySelectorAll("button").forEach(b=>{
-    b.onclick=()=>{
-      aiRange.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
-      b.classList.add("active"); range=b.dataset.range;
-    };
-  });
 
   function recordsInRange(){
-    const all=load(), now=Date.now();
-    if(range==="today") return all.filter(r=>isToday(r.start));
-    if(range==="7d"){ const cut=now-7*864e5; return all.filter(r=>new Date(r.start).getTime()>=cut); }
-    return all;
+    const now = Date.now();
+    if(aiRangeValue === "today"){
+      return recordsCache.filter(record => isToday(record.start));
+    }
+    if(aiRangeValue === "7d"){
+      const cutoff = now - 7 * 86400000;
+      return recordsCache.filter(record => new Date(record.start).getTime() >= cutoff);
+    }
+    return recordsCache.slice();
   }
+
   function recordsToText(list){
-    return list.slice().sort((a,b)=>a.id-b.id).map(r=>{
-      const d=new Date(r.start);
-      const day=d.toLocaleDateString("zh-TW");
-      const t=d.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false});
-      return `${day} ${t}（${Math.round(r.seconds/60)}分）：${r.text}`;
+    return list.slice().sort((a, b) => a.id - b.id).map(record => {
+      const date = new Date(record.start);
+      const day = date.toLocaleDateString("zh-TW");
+      const time = date.toLocaleTimeString("zh-TW", {
+        hour:"2-digit",
+        minute:"2-digit",
+        hour12:false
+      });
+      return `${day} ${time}（${Math.round(record.seconds / 60)} 分）：${record.text}`;
     }).join("\n");
   }
 
-  const AI_PROMPT='你是專注紀錄整理助手。以下是使用者的 15 分鐘專注紀錄，每行格式為「日期 時間（分鐘）：內容」。請把它們依主題自動分類，計算每個主題的總分鐘數，並寫一段整體重點摘要。\n\n只回傳 JSON，不要任何說明文字或 markdown 標記，格式：\n{"summary":"整體重點摘要，2-3句繁體中文","categories":[{"name":"主題名稱","minutes":總分鐘數整數,"items":["該主題做的事，簡短條列"]}],"highlight":"一句最值得記住的洞察或最有產出的一段"}\n\n紀錄：\n';
-
   function copyAIPrompt(){
-    const list=recordsInRange();
-    if(!list.length){ toast("這個範圍還沒有紀錄"); return; }
-    const out=AI_PROMPT+recordsToText(list);
-    if(navigator.clipboard){
-      navigator.clipboard.writeText(out).then(()=>toast("已複製提示，貼到 ChatGPT / Claude 即可"),()=>fallbackCopy(out));
-    }else fallbackCopy(out);
+    const list = recordsInRange();
+    if(!list.length){
+      toast("目前選擇的範圍沒有紀錄");
+      return;
+    }
+    copyText(AI_PROMPT + recordsToText(list), "已複製 AI 提示詞");
   }
 
-  aiCopyBtn.onclick=copyAIPrompt;
+  async function saveSyncSettings(){
+    syncConfig = {
+      mode: syncModeEl.value,
+      syncId: syncIdEl.value.trim() || createSyncId(),
+      supabaseUrl: supabaseUrlEl.value.trim().replace(/\/+$/, ""),
+      supabaseAnonKey: supabaseKeyEl.value.trim()
+    };
+    persistSyncConfig();
+    hydrateSyncForm();
+    try{
+      await loadRecords();
+      renderLog();
+      toast(syncConfig.mode === "supabase" ? "同步設定已儲存" : "已切換為本機模式");
+    }catch(err){
+      console.error(err);
+      toast("同步設定已儲存，但雲端連線失敗");
+    }
+  }
+
+  async function syncNow(){
+    try{
+      await loadRecords();
+      renderLog();
+      toast(isRemoteConfigured() ? "已從雲端重新同步" : "目前是本機模式，沒有雲端可同步");
+    }catch(err){
+      console.error(err);
+      toast("同步失敗，請檢查 Supabase 設定");
+    }
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden) return;
+    if(running){
+      syncRemaining();
+      render();
+      if(remaining <= 0) finish({fromRestore:true});
+    }
+    stopTitleFlash();
+  });
+
+  window.addEventListener("focus", stopTitleFlash);
+
+  startBtn.onclick = start;
+  resetBtn.onclick = reset;
+  saveBtn.onclick = saveSession;
+  testNotifyBtn.onclick = testNotify;
+  copyBtn.onclick = copyLog;
+  clearBtn.onclick = clearToday;
+  saveSyncBtn.onclick = saveSyncSettings;
+  syncNowBtn.onclick = syncNow;
+  aiCopyBtn.onclick = copyAIPrompt;
+  syncModeEl.onchange = () => {
+    syncConfig.mode = syncModeEl.value;
+    updateSyncUi();
+  };
+
+  aiRange.querySelectorAll("button").forEach(button => {
+    button.onclick = () => {
+      aiRange.querySelectorAll("button").forEach(node => node.classList.remove("active"));
+      button.classList.add("active");
+      aiRangeValue = button.dataset.range;
+    };
+  });
 
   render();
-  renderLog();
+  hydrateSyncForm();
   updateNotifyHint();
+  restoreTimerState();
+  loadRecords().then(renderLog);
 })();
 </script>
 </body>
