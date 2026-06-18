@@ -287,11 +287,11 @@
       </div>
       <div class="field">
         <label for="supabaseUrl">Supabase Project URL</label>
-        <input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co">
+        <input id="supabaseUrl" type="url" value="https://jfmyriwuryidzvcnqmnv.supabase.co" placeholder="https://your-project.supabase.co">
       </div>
       <div class="field">
         <label for="supabaseKey">Supabase Anon Key</label>
-        <input id="supabaseKey" type="password" placeholder="eyJhbGciOi...">
+        <input id="supabaseKey" type="password" placeholder="貼上 Publishable key；同一台裝置只要填一次">
       </div>
     </div>
     <div class="sync-actions">
@@ -337,6 +337,8 @@
   "use strict";
 
   const DURATION = 15 * 60;
+  const DEFAULT_SUPABASE_URL = "https://jfmyriwuryidzvcnqmnv.supabase.co";
+  const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_mJ5MevnC2zIDD7jYZ1olCg_6KcXn7l-";
   const KEYS = {
     records: "focus15-records",
     timer: "focus15-timer",
@@ -394,8 +396,8 @@
     return {
       mode: "local",
       syncId: createSyncId(),
-      supabaseUrl: "",
-      supabaseAnonKey: ""
+      supabaseUrl: DEFAULT_SUPABASE_URL,
+      supabaseAnonKey: DEFAULT_SUPABASE_ANON_KEY
     };
   }
 
@@ -426,7 +428,7 @@
   function hydrateSyncForm(){
     syncModeEl.value = syncConfig.mode;
     syncIdEl.value = syncConfig.syncId || "";
-    supabaseUrlEl.value = syncConfig.supabaseUrl || "";
+    supabaseUrlEl.value = syncConfig.supabaseUrl || DEFAULT_SUPABASE_URL;
     supabaseKeyEl.value = syncConfig.supabaseAnonKey || "";
     updateSyncUi();
   }
@@ -436,15 +438,15 @@
     if(syncConfig.mode === "supabase" && remoteReady){
       syncStateEl.textContent = "雲端同步已設定";
       syncStateEl.className = "status-chip ok";
-      syncHintEl.textContent = "這份紀錄會先寫到 Supabase；同樣輸入同步 ID 的其他裝置可讀到相同資料。";
+      syncHintEl.textContent = "這份紀錄會先寫到 Supabase；同樣輸入同步 ID 的其他裝置可讀到相同資料。Project URL 已內建，不用每次再填。";
     }else if(syncConfig.mode === "supabase"){
       syncStateEl.textContent = "雲端模式待完成";
       syncStateEl.className = "status-chip warn";
-      syncHintEl.textContent = "你已選擇雲端同步，但還缺少 Supabase URL、Anon Key 或同步 ID，所以目前仍會退回本機資料。";
+      syncHintEl.textContent = "你已選擇雲端同步，但還缺少 Publishable key 或同步 ID，所以目前仍會退回本機資料。Project URL 已內建。";
     }else{
       syncStateEl.textContent = "本機模式";
       syncStateEl.className = "status-chip";
-      syncHintEl.textContent = "目前資料只保存在這個瀏覽器。若要跨裝置，切到 Supabase 雲端同步並填入同一組同步設定。";
+      syncHintEl.textContent = "目前資料只保存在這個瀏覽器。若要跨裝置，切到 Supabase 雲端同步並填入同一組同步設定。Project URL 已內建。";
     }
   }
 
@@ -1097,7 +1099,7 @@
     syncConfig = {
       mode: syncModeEl.value,
       syncId: syncIdEl.value.trim() || createSyncId(),
-      supabaseUrl: supabaseUrlEl.value.trim().replace(/\/+$/, ""),
+      supabaseUrl: (supabaseUrlEl.value.trim() || DEFAULT_SUPABASE_URL).replace(/\/+$/, ""),
       supabaseAnonKey: supabaseKeyEl.value.trim()
     };
     persistSyncConfig();
