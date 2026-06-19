@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
@@ -344,6 +344,7 @@
     timer: "focus15-timer",
     sync: "focus15-sync-config"
   };
+  const SW_URL = "./sw.js";
   const BASE_TITLE = "15 分鐘專注記錄器";
   const AI_PROMPT = '你是專注紀錄整理助手。以下是使用者的 15 分鐘專注紀錄，每行格式為「日期 時間（分鐘）：內容」。請把它們依主題自動分類，計算每個主題的總分鐘數，並寫一段整體重點摘要。\\n\\n只回傳 JSON，不要任何說明文字或 markdown 標記，格式：\\n{"summary":"整體重點摘要，2-3 句繁體中文","categories":[{"name":"主題名稱","minutes":總分鐘數整數,"items":["該主題做的事，簡短條列"]}],"highlight":"一句最值得記住的洞察或最有產出的一段"}\\n\\n紀錄：\\n';
 
@@ -391,6 +392,8 @@
   let aiRangeValue = "today";
   let timerInterval = null;
   let timerWorker = createTimerWorker();
+  let wakeLock = null;
+  let swRegistration = null;
 
   function defaultSyncConfig(){
     return {
@@ -696,6 +699,45 @@
     return worker;
   }
 
+  function canRegisterServiceWorker(){
+    if(!("serviceWorker" in navigator)) return false;
+    if(window.isSecureContext) return true;
+    return /^(localhost|127(?:\.\d+){0,2}\.\d+)$/.test(location.hostname);
+  }
+
+  async function ensureServiceWorker(){
+    if(swRegistration) return swRegistration;
+    if(!canRegisterServiceWorker()) return null;
+    try{
+      swRegistration = await navigator.serviceWorker.register(SW_URL);
+      await navigator.serviceWorker.ready;
+      return swRegistration;
+    }catch(err){
+      console.warn("Service worker registration failed:", err);
+      return null;
+    }
+  }
+
+  async function requestWakeLock(){
+    if(!("wakeLock" in navigator) || wakeLock || !running) return;
+    try{
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => {
+        wakeLock = null;
+      }, {once:true});
+    }catch(err){
+      console.warn("Wake lock request failed:", err);
+    }
+  }
+
+  async function releaseWakeLock(){
+    if(!wakeLock) return;
+    try{
+      await wakeLock.release();
+    }catch(_err){}
+    wakeLock = null;
+  }
+
   function startActiveTimers(){
     stopActiveTimers();
     timerInterval = window.setInterval(tick, 1000);
@@ -750,6 +792,7 @@
       return;
     }
     await askNotifyPermission();
+    await ensureServiceWorker();
     stopTitleFlash();
     if(!sessionStart) sessionStart = new Date().toISOString();
     finished = false;
@@ -761,6 +804,7 @@
     resetBtn.disabled = false;
     saveTimerState();
     startActiveTimers();
+    await requestWakeLock();
     render();
   }
 
@@ -769,6 +813,7 @@
     running = false;
     endAt = null;
     stopActiveTimers();
+    releaseWakeLock();
     stateEl.textContent = "已暫停";
     startBtn.textContent = "繼續";
     saveTimerState();
@@ -778,6 +823,7 @@
     running = false;
     endAt = null;
     stopActiveTimers();
+    releaseWakeLock();
     saveTimerState();
   }
 
@@ -814,6 +860,7 @@
     startBtn.textContent = "開始";
     resetBtn.disabled = true;
     stopTitleFlash();
+    releaseWakeLock();
     clearTimerState();
     render();
   }
@@ -843,10 +890,11 @@
 
   function notifyStatusText(){
     if(!("Notification" in window)) return "這個瀏覽器不支援系統通知，時間到時只會用聲音和頁籤標題提醒。";
-    if(!window.isSecureContext && location.protocol !== "file:") return "系統通知通常需要 https 或 localhost；若直接開本機檔案，部分瀏覽器可能不會發出通知。";
-    if(Notification.permission === "granted") return "通知已允許，15 分鐘到時會嘗試跳系統通知。";
+    if(!window.isSecureContext && location.protocol !== "file:") return "手機通知通常需要 HTTPS 網址；如果不是安全連線，鎖屏通知會很不穩。";
+    if(Notification.permission === "granted" && canRegisterServiceWorker()) return "通知已允許，會優先使用系統通知；但手機鎖屏時仍可能受瀏覽器省電影響。";
+    if(Notification.permission === "granted") return "通知已允許，但目前環境不能註冊背景通知；手機鎖屏時可能收不到提醒。";
     if(Notification.permission === "denied") return "通知已被瀏覽器或系統阻擋，請到設定內重新開啟。";
-    return "按開始或測試通知後允許權限，15 分鐘到時才會跳系統通知。";
+    return "建議先測試通知；若想讓手機鎖屏時更穩，請用 HTTPS 開啟並保持這個頁面可在背景執行。";
   }
 
   function updateNotifyHint(){
@@ -855,6 +903,7 @@
 
   async function askNotifyPermission(){
     try{
+      await ensureServiceWorker();
       if("Notification" in window && Notification.permission === "default"){
         await Notification.requestPermission();
       }
@@ -869,8 +918,21 @@
         await askNotifyPermission();
       }
       if("Notification" in window && Notification.permission === "granted"){
-        const n = new Notification(payload.title || "15 分鐘到了 ⏰", {
-          body: payload.body || "記錄一下這段時間做了什麼。",
+        const title = payload.title || "15 分鐘到了 ⏰";
+        const body = payload.body || "記錄一下這段時間做了什麼。";
+        const registration = await ensureServiceWorker();
+        if(registration && typeof registration.showNotification === "function"){
+          await registration.showNotification(title, {
+            body,
+            tag: "focus15",
+            renotify: true,
+            requireInteraction: true,
+            data: { url: location.href }
+          });
+          return true;
+        }
+        const n = new Notification(title, {
+          body,
           tag: "focus15"
         });
         n.onclick = () => {
@@ -1130,12 +1192,21 @@
     if(running){
       syncRemaining();
       render();
+      requestWakeLock();
       if(remaining <= 0) finish({fromRestore:true});
     }
     stopTitleFlash();
   });
 
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden) return;
+    ensureServiceWorker();
+  });
+
   window.addEventListener("focus", stopTitleFlash);
+  window.addEventListener("focus", () => {
+    if(running) requestWakeLock();
+  });
 
   startBtn.onclick = start;
   resetBtn.onclick = reset;
@@ -1162,7 +1233,17 @@
   render();
   hydrateSyncForm();
   updateNotifyHint();
+  ensureServiceWorker().then(updateNotifyHint);
   restoreTimerState();
+  if(running) requestWakeLock();
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.addEventListener("message", event => {
+      if(event.data && event.data.type === "focus15-notification-click"){
+        window.focus();
+        activityEl.focus();
+      }
+    });
+  }
   loadRecords().then(renderLog);
 })();
 </script>
